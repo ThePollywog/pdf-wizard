@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>PDF Wizard CAC Signing</title>
+    <style>
+      body { font: 14px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 16px; min-width: 420px; color: #1f1f1f; }
+      h1 { font-size: 16px; margin: 0 0 8px; }
+      p { color: #555; margin: 0 0 12px; }
+      ul { padding: 0; list-style: none; margin: 0 0 12px; }
+      li { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 6px; }
+      form { display: flex; gap: 8px; }
+      input { flex: 1; padding: 6px 8px; border: 1px solid #bbb; border-radius: 6px; }
+      button { padding: 6px 12px; border-radius: 6px; border: 1px solid #1f4e79; background: #1f4e79; color: #fff; cursor: pointer; }
+      li button { background: #fff; color: #b3261e; border-color: #ddd; }
+      .muted { color: #777; font-size: 12px; }
+      .error { color: #b3261e; font-size: 12px; min-height: 16px; }
+    </style>
+  </head>
+  <body>
+    <h1>PDF Wizard sites allowed to use your CAC</h1>
+    <p>Only these sites can ask for a signature. Your CAC PIN is always typed into your computer's own prompt.
+      <span class="muted">http://localhost is always allowed. Sites set by your administrator are marked “policy”.</span></p>
+    <ul id="list"></ul>
+    <form id="add">
+      <input id="origin" placeholder="https://pdfwizard.example.mil" autocomplete="off" />
+      <button type="submit">Add</button>
+    </form>
+    <div class="error" id="error"></div>
+    <script src="options.js"></script>
+  </body>
+</html>

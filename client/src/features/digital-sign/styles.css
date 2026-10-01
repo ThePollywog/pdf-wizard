@@ -1,0 +1,35 @@
+.digital-sign-panel { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px 16px; }
+.digital-sign-intro { margin: 0; color: var(--text-muted); }
+.digital-sign-section-title { margin-top: 4px; font-weight: 700; font-size: var(--fs-sm); text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.digital-sign-notice { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border-radius: var(--radius); font-size: var(--fs-sm); line-height: 1.45; }
+.digital-sign-notice > svg { flex: none; margin-top: 2px; }
+.digital-sign-notice.is-warning { background: color-mix(in srgb, var(--warning) 12%, transparent); }
+.digital-sign-notice.is-error { background: var(--danger-soft); }
+.digital-sign-notice code { font-size: 11px; }
+.digital-sign-list { display: flex; flex-direction: column; gap: 8px; }
+.digital-sign-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-elevated); }
+.digital-sign-item-icon { flex: none; margin-top: 1px; }
+.digital-sign-item.is-ok .digital-sign-item-icon { color: var(--success); }
+.digital-sign-item.is-warn .digital-sign-item-icon { color: var(--warning-strong); }
+.digital-sign-item.is-bad .digital-sign-item-icon { color: var(--danger); }
+.digital-sign-item.is-empty .digital-sign-item-icon { color: var(--text-muted); }
+.digital-sign-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.digital-sign-item-name { font-weight: 700; overflow-wrap: anywhere; }
+.digital-sign-badge { font-weight: 700; }
+.digital-sign-badge.is-ok { color: var(--success-strong); }
+.digital-sign-badge.is-warn { color: var(--warning-strong); }
+.digital-sign-badge.is-bad { color: var(--danger); }
+.digital-sign-form { display: flex; flex-direction: column; gap: 12px; }
+.digital-sign-cert { padding: 8px 10px; border-radius: var(--radius); background: var(--selected); font-size: var(--fs-sm); }
+.digital-sign-expired { margin-top: 4px; color: var(--danger); font-weight: 700; }
+.digital-sign-here {
+  position: absolute; pointer-events: auto; padding: 0; border: 2px dashed var(--brand); border-radius: 3px;
+  background: color-mix(in srgb, var(--brand) 8%, transparent); cursor: pointer;
+}
+.digital-sign-here:hover, .digital-sign-here:focus-visible { background: color-mix(in srgb, var(--brand) 16%, transparent); outline: none; }
+.digital-sign-here-tab {
+  position: absolute; left: -2px; top: -22px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
+  border-radius: 3px 3px 0 0; background: var(--brand); color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.digital-sign-place { position: absolute; inset: 0; cursor: crosshair; touch-action: none; }
+.digital-sign-place-box { position: absolute; border: 2px dashed var(--brand); background: color-mix(in srgb, var(--brand) 10%, transparent); }

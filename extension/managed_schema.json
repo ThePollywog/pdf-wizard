@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "allowedOrigins": {
+      "title": "PDF Wizard sites allowed to request CAC signatures",
+      "description": "Origins (scheme://host[:port]) of the PDF Wizard deployments that may ask this extension to sign, e.g. https://pdfwizard.example.mil",
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

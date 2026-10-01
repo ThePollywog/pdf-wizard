@@ -1,0 +1,20 @@
+PDF Wizard - Sample Text File
+==============================
+
+This plain text file is used to test converting text documents to PDF.
+It contains several paragraphs, a list and some longer lines that must wrap.
+
+Document workflows usually begin with a draft. The draft is reviewed,
+commented on, revised and finally approved. At each step the document
+may be converted between formats, combined with other files, or signed.
+
+Checklist:
+  - Open the file
+  - Convert it to PDF
+  - Verify that every line appears in the output
+
+A very long line follows so that the converter has to wrap it: Lorem ipsum is not used here; instead this sentence simply keeps going for a while, describing how a converter should break long lines at word boundaries rather than cutting words in half.
+
+Special characters: café, naïve, résumé, 25 °C, 10 € - these should survive conversion.
+
+End of file.

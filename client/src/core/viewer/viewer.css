@@ -1,0 +1,407 @@
+/* ── Document viewer ─────────────────────────────────────────────────────────
+ * Class prefix `pdfwizard-` (never `.page`: the shell and pdf.js use it).
+ * pdf.js layers (.textLayer / .annotationLayer) come from pdfjs-dist/web/pdf_viewer.css and read
+ * --scale-factor / --total-scale-factor / --scale-round-x|y set inline on every .pdfwizard-page.
+ */
+
+.pdfwizard-viewer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  background: var(--canvas);
+  overflow: hidden;
+}
+.pdfwizard-viewer.is-error,
+.pdfwizard-viewer.is-empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.pdfwizard-scroller {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  /* Pinch-zoom is handled by the viewer; keep one-finger panning native. */
+  touch-action: pan-x pan-y;
+}
+.pdfwizard-scroller:focus-visible { box-shadow: inset 0 0 0 2px var(--accent-soft-2); }
+
+.pdfwizard-sizer {
+  position: relative;
+  isolation: isolate;
+}
+
+/* ── Page ── */
+
+.pdfwizard-page {
+  position: absolute;
+  z-index: 0; /* own stacking context: layers below never cover floating bars */
+  background: #fff;
+  box-shadow: var(--shadow-page);
+  contain: layout style;
+}
+.pdfwizard-page.is-dark { background: #141414; }
+
+.pdfwizard-page-base {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.pdfwizard-canvasWrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.pdfwizard-page.is-dark .pdfwizard-canvasWrap {
+  background: #fff;
+  filter: invert(0.92) hue-rotate(180deg);
+}
+.pdfwizard-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  display: block;
+}
+.pdfwizard-canvas-detail {
+  position: absolute;
+  display: block;
+}
+
+.pdfwizard-page-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  color: var(--text-subtle);
+  animation: pdfwizard-fade-in 0.2s ease 0.15s both;
+}
+.pdfwizard-page-error {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+  text-align: center;
+  color: #6e6e6e;
+  font-size: var(--fs-sm);
+  pointer-events: none;
+}
+.pdfwizard-page-error small { max-width: 90%; color: #8f8f8f; overflow-wrap: anywhere; }
+
+/* pdf.js text layer: selection colour close to desktop viewers'. */
+.pdfwizard-page .textLayer ::selection { background: rgb(0 90 255 / 0.28); }
+.pdfwizard-page .textLayer br::selection { background: transparent; }
+.pdfwizard-viewer.is-hand .textLayer,
+.pdfwizard-viewer.is-space-pan .textLayer {
+  pointer-events: none;
+  user-select: none;
+}
+
+/* pdf.js annotation layer: Conventional light-blue form field highlight. */
+.pdfwizard-page .annotationLayer {
+  z-index: 1;
+  --annotation-unfocused-field-background: linear-gradient(rgb(204 215 255 / 0.75), rgb(204 215 255 / 0.75));
+  --input-focus-border-color: var(--accent);
+  --input-focus-outline: none;
+  --input-hover-border-color: rgb(20 115 230 / 0.55);
+}
+.pdfwizard-page .annotationLayer .textWidgetAnnotation :is(input, textarea):focus,
+.pdfwizard-page .annotationLayer .choiceWidgetAnnotation select:focus {
+  background: rgb(204 215 255 / 0.35);
+  box-shadow: 0 0 0 2px var(--accent-soft-2);
+}
+.pdfwizard-page .annotationLayer .linkAnnotation > a:hover {
+  opacity: 1;
+  background: rgb(20 115 230 / 0.08);
+  box-shadow: none;
+}
+.pdfwizard-page.is-dark .annotationLayer { filter: invert(0.92) hue-rotate(180deg); }
+/* [fill-sign] Pages stay paper-white in the dark theme (dark pages invert the whole layer), so native
+   form controls keep the light colour scheme, and fields whose /DA has no colour (list boxes) don't
+   inherit the app's light text colour. */
+.pdfwizard-page .annotationLayer { color-scheme: light; }
+.pdfwizard-page .annotationLayer :is(.textWidgetAnnotation, .choiceWidgetAnnotation) :is(input, textarea, select) { color: #000; }
+
+/* ── Decorations (search hits, diffs…) ── */
+
+.pdfwizard-decorations {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+.pdfwizard-deco {
+  position: absolute;
+  background: rgb(255 213 0 / 0.38);
+  mix-blend-mode: multiply;
+  border-radius: 1px;
+}
+.pdfwizard-deco.is-active {
+  background: rgb(255 140 0 / 0.5);
+  box-shadow: 0 0 0 1px rgb(230 110 0 / 0.9);
+}
+
+/* ── Objects ── */
+
+.pdfwizard-objects {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+.pdfwizard-obj {
+  position: absolute;
+  pointer-events: auto;
+}
+.pdfwizard-obj[data-hit='shape'] { pointer-events: none; }
+.pdfwizard-objects.is-inert .pdfwizard-obj,
+.pdfwizard-objects.is-inert .pdfwizard-obj * { pointer-events: none !important; }
+.pdfwizard-viewer.is-select .pdfwizard-obj.is-selected:not(.is-locked):not(.is-editing) { cursor: move; }
+.pdfwizard-obj-unknown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--danger);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Tool overlay ── */
+
+.pdfwizard-tool-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+.pdfwizard-tool-overlay.is-passthrough { pointer-events: none; }
+
+/* ── Feature viewer overlays (registerViewerOverlay): over the whole viewer, not scrolled ── */
+
+.pdfwizard-viewer-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* ── Feature page layers (registerPageLayer) ── */
+
+.pdfwizard-page-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.pdfwizard-page-layer.is-under-objects { z-index: 2; }
+.pdfwizard-page-layer.is-over-objects { z-index: 4; }
+
+/* ── Selection frames, handles, marquee ── */
+
+.pdfwizard-selection {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.pdfwizard-frame {
+  position: absolute;
+  box-shadow: 0 0 0 1px var(--accent), 0 0 0 2px rgb(255 255 255 / 0.55);
+  border-radius: 1px;
+}
+.pdfwizard-frame.is-locked { box-shadow: 0 0 0 1px var(--text-subtle), 0 0 0 2px rgb(255 255 255 / 0.55); }
+.pdfwizard-frame.is-locked::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px dashed rgb(255 255 255 / 0.8);
+}
+.pdfwizard-frame.is-editing { box-shadow: 0 0 0 1px var(--accent), 0 0 0 3px var(--accent-soft-2); }
+.pdfwizard-frame.is-hit { pointer-events: auto; cursor: move; background: transparent; }
+.pdfwizard-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+  pointer-events: auto;
+  touch-action: none;
+}
+.pdfwizard-handle::before { content: ''; position: absolute; inset: -6px; } /* larger hit area */
+.pdfwizard-handle-nw { left: 0; top: 0; cursor: nwse-resize; }
+.pdfwizard-handle-n { left: 50%; top: 0; cursor: ns-resize; }
+.pdfwizard-handle-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.pdfwizard-handle-e { left: 100%; top: 50%; cursor: ew-resize; }
+.pdfwizard-handle-se { left: 100%; top: 100%; cursor: nwse-resize; }
+.pdfwizard-handle-s { left: 50%; top: 100%; cursor: ns-resize; }
+.pdfwizard-handle-sw { left: 0; top: 100%; cursor: nesw-resize; }
+.pdfwizard-handle-w { left: 0; top: 50%; cursor: ew-resize; }
+.pdfwizard-marquee {
+  position: absolute;
+  border: 1px solid var(--accent);
+  background: rgb(20 115 230 / 0.1);
+}
+
+/* ── Cursors ── */
+
+.pdfwizard-viewer.is-hand .pdfwizard-scroller { cursor: grab; }
+.pdfwizard-viewer.is-space-pan .pdfwizard-scroller,
+.pdfwizard-viewer.is-space-pan .pdfwizard-scroller * { cursor: grab !important; }
+.pdfwizard-viewer.is-panning .pdfwizard-scroller,
+.pdfwizard-viewer.is-panning .pdfwizard-scroller * { cursor: grabbing !important; user-select: none; }
+
+/* ── Floating properties bar ── */
+
+.pdfwizard-props-bar {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  animation: pdfwizard-fade-in 0.12s ease;
+  cursor: default;
+}
+.pdfwizard-props-bar .divider-v { margin: 4px 2px; }
+.pdfwizard-props-type,
+.pdfwizard-props-generic {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.pdfwizard-props-chip {
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.pdfwizard-props-chip:hover { background: var(--hover); }
+.pdfwizard-props-chip[data-open] { background: var(--pressed); }
+.pdfwizard-props-chip:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent); }
+.pdfwizard-props-stroke {
+  display: inline-block;
+  width: 18px;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+/* ── Text selection popup ── */
+
+.pdfwizard-text-popup {
+  position: absolute;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+  transform: translate(-50%, -100%);
+  animation: pdfwizard-fade-in 0.12s ease;
+  user-select: none;
+}
+.pdfwizard-text-popup.is-below { transform: translate(-50%, 0); }
+.pdfwizard-text-popup-btn {
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.pdfwizard-text-popup-btn:hover { background: var(--hover); }
+
+/* ── Comment popover ── */
+
+.pdfwizard-comment-popover { width: 300px; max-width: calc(100vw - 24px); }
+.pdfwizard-comment { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
+.pdfwizard-comment-head { display: flex; align-items: center; gap: 8px; }
+.pdfwizard-comment-icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+}
+.pdfwizard-comment-who { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.pdfwizard-comment-who strong { font-size: var(--fs-md); overflow: hidden; text-overflow: ellipsis; }
+.pdfwizard-comment-who small { color: var(--text-muted); font-size: var(--fs-xs); }
+.pdfwizard-comment-actions { display: flex; justify-content: flex-end; gap: 6px; }
+
+/* ── Thumbnails ── */
+
+.pdfwizard-thumb {
+  position: relative;
+  display: block;
+  max-width: 100%;
+  background: #fff;
+  overflow: hidden;
+}
+.pdfwizard-thumb:not(.is-loaded):not(.is-failed) {
+  background: linear-gradient(100deg, #f3f3f3 30%, #fafafa 50%, #f3f3f3 70%);
+  background-size: 300% 100%;
+  animation: pdfwizard-shimmer 1.4s linear infinite;
+}
+.pdfwizard-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pdfwizard-thumb:not(.is-loaded) { animation: none; }
+  .pdfwizard-props-bar,
+  .pdfwizard-text-popup,
+  .pdfwizard-page-loading { animation: none; }
+}

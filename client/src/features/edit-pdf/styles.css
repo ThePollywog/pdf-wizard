@@ -1,0 +1,367 @@
+/* Edit a PDF — page overlay, text editor, objects, task panel and dialogs. */
+
+/* Same metrics as the embedded / standard sans font, so edited text lines up with the PDF. */
+@font-face {
+  font-family: 'EditPdf Sans';
+  src: url('/pdfjs/standard_fonts/LiberationSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'EditPdf Sans';
+  src: url('/pdfjs/standard_fonts/LiberationSans-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'EditPdf Sans';
+  src: url('/pdfjs/standard_fonts/LiberationSans-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'EditPdf Sans';
+  src: url('/pdfjs/standard_fonts/LiberationSans-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+html.edit-pdf-dragging,
+html.edit-pdf-dragging * {
+  cursor: var(--edit-pdf-drag-cursor, default) !important;
+  user-select: none !important;
+}
+
+/* the page with the floating bar stays above its neighbours (the bar may overhang) */
+.pdfwizard-page:has(.edit-pdf-bar) { z-index: 1; }
+
+/* page pixels (previews, text drawn like the PDF) follow the dark page rendering */
+.pdfwizard-page.is-dark .edit-pdf-paint,
+.pdfwizard-page.is-dark .edit-pdf-obj-image,
+.pdfwizard-page.is-dark .edit-pdf-obj-text { filter: invert(0.92) hue-rotate(180deg); }
+
+/* ── overlay ── */
+
+.edit-pdf-overlay {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.edit-pdf-outlines {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.edit-pdf-outline {
+  fill: transparent;
+  stroke: none;
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  pointer-events: none;
+}
+.edit-pdf-outline.is-faint { stroke: rgb(20 115 230 / 0.28); }
+.edit-pdf-outline.is-link { stroke: rgb(20 115 230 / 0.5); stroke-dasharray: 3 2; fill: rgb(20 115 230 / 0.04); }
+.edit-pdf-outline.is-hover { stroke: var(--accent); stroke-width: 1px; }
+.edit-pdf-outline.is-active { stroke: var(--accent); stroke-width: 1.5px; }
+.edit-pdf-outline.is-link.is-hover,
+.edit-pdf-outline.is-link.is-active { stroke-dasharray: none; fill: rgb(20 115 230 / 0.08); }
+.edit-pdf-outline.is-moving { stroke: none; }
+
+.edit-pdf-cover,
+.edit-pdf-crop-dim {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.edit-pdf-preview,
+.edit-pdf-ghost {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.edit-pdf-snap {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+}
+.edit-pdf-preview-box {
+  position: absolute;
+  border: 1px dashed var(--accent);
+  pointer-events: none;
+}
+.edit-pdf-place-preview {
+  position: absolute;
+  max-width: none;
+  opacity: 0.6;
+  outline: 1px dashed var(--accent);
+  pointer-events: none;
+}
+.edit-pdf-marquee { pointer-events: none; }
+
+/* selection frames (text: along the text direction; images / links: upright box) */
+.edit-pdf-selframe,
+.edit-pdf-selbox {
+  position: absolute;
+  pointer-events: none;
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.edit-pdf-selframe .pdfwizard-handle,
+.edit-pdf-selbox .pdfwizard-handle { pointer-events: auto; }
+.edit-pdf-width-handle { border-radius: 2px; }
+
+/* crop mode */
+.edit-pdf-crop { position: absolute; inset: 0; z-index: 2; }
+.edit-pdf-crop-dim path { fill: rgb(0 0 0 / 0.45); }
+.edit-pdf-crop-full {
+  position: absolute;
+  border: 1px dashed rgb(255 255 255 / 0.8);
+  outline: 1px dashed rgb(0 0 0 / 0.45);
+  pointer-events: none;
+}
+.edit-pdf-crop-box {
+  position: absolute;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.7);
+  cursor: move;
+  pointer-events: auto;
+}
+
+/* ── in-place text editor ── */
+
+.edit-pdf-editor {
+  position: absolute;
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+  cursor: text;
+  z-index: 1;
+}
+.edit-pdf-editor.is-busy { outline-style: dashed; cursor: progress; }
+.edit-pdf-textarea {
+  position: absolute;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  outline: none;
+  box-shadow: none;
+  font-synthesis: none;
+  tab-size: 4;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.edit-pdf-textarea::selection { background: rgb(0 90 255 / 0.28); }
+.edit-pdf-editor .edit-pdf-width-handle { cursor: ew-resize; }
+
+.edit-pdf-textlines {
+  position: absolute;
+  pointer-events: none;
+  white-space: pre;
+}
+.edit-pdf-textline {
+  position: absolute;
+  left: 0;
+  font-synthesis: none;
+  overflow: visible;
+}
+
+/* ── floating bar / status ── */
+
+.edit-pdf-bar { gap: 2px; }
+.edit-pdf-bar-group { display: inline-flex; align-items: center; gap: 2px; }
+.edit-pdf-bar-label { padding: 0 8px; font-size: var(--fs-sm); color: var(--text-muted); white-space: nowrap; }
+.edit-pdf-danger,
+.edit-pdf-danger svg { color: var(--danger) !important; }
+
+.edit-pdf-status {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  transform: translateX(-50%);
+  z-index: 3;
+  max-width: calc(100% - 16px);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  font-size: var(--fs-xs);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  animation: edit-pdf-fade 0.2s ease 0.3s both;
+}
+.edit-pdf-status.is-error { background: var(--danger); color: #fff; animation-delay: 0s; }
+@keyframes edit-pdf-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* ── objects ── */
+
+.edit-pdf-obj-image { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+.edit-pdf-obj-image img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100px;
+  height: 100px;
+  max-width: none;
+  transform-origin: 0 0;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.edit-pdf-obj-text { position: absolute; overflow: visible; pointer-events: none; }
+.edit-pdf-obj-link { position: absolute; inset: 0; box-sizing: border-box; }
+.edit-pdf-obj-link.is-live { cursor: pointer; }
+.edit-pdf-obj-link.is-live:hover { background: rgb(20 115 230 / 0.08); }
+.edit-pdf-obj-link.is-live.is-hl-invert:active { backdrop-filter: invert(1); }
+.edit-pdf-obj-link.is-live.is-hl-outline:active { outline: 2px solid currentColor; outline-offset: -1px; }
+.edit-pdf-obj-link.is-live.is-hl-inset:active { box-shadow: inset 2px 2px 0 rgb(0 0 0 / 0.45), inset -2px -2px 0 rgb(255 255 255 / 0.6); }
+
+/* ── task panel ── */
+
+.edit-pdf-panel { display: flex; flex-direction: column; min-height: 100%; }
+.edit-pdf-section .panel-section-title { display: flex; align-items: center; gap: 6px; }
+.edit-pdf-notice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 12px 16px 0;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+}
+.edit-pdf-notice svg { flex-shrink: 0; margin-top: 1px; color: var(--accent-text); }
+
+.edit-pdf-tools {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.edit-pdf-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: 6px 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  cursor: pointer;
+}
+.edit-pdf-tool:hover:not(:disabled) { background: var(--hover); border-color: var(--border); }
+.edit-pdf-tool:disabled { opacity: 0.45; cursor: default; }
+.edit-pdf-tool:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.edit-pdf-tool.is-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+
+.edit-pdf-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.edit-pdf-row:last-child { margin-bottom: 0; }
+.edit-pdf-grow { flex: 1; min-width: 0; }
+.edit-pdf-sep { width: 1px; height: 20px; margin: 0 4px; background: var(--border); }
+.edit-pdf-mini-field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.edit-pdf-subtitle { margin: 4px 0 6px; font-size: var(--fs-xs); font-weight: 600; color: var(--text-muted); }
+.edit-pdf-hint { margin: 0; font-size: var(--fs-sm); line-height: 1.4; color: var(--text-muted); }
+.edit-pdf-hint.is-warning { margin-bottom: 8px; color: var(--warning-strong); }
+.edit-pdf-format { display: flex; flex-direction: column; }
+.edit-pdf-format > .edit-pdf-hint { margin-bottom: 8px; }
+.edit-pdf-section .btn + .btn { margin-left: 0; }
+
+.edit-pdf-design { display: flex; flex-direction: column; gap: 2px; }
+.edit-pdf-design-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+.edit-pdf-design-item:disabled { color: var(--text-subtle); cursor: default; }
+.edit-pdf-design-item > span:nth-child(2) { flex: 1; }
+.edit-pdf-soon {
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--panel-2);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+/* ── options bar ── */
+
+/* the hint gives way first (ellipsis); the controls keep their width and the row scrolls once only they are left */
+.edit-pdf-options { display: flex; flex: 0 1 auto; min-width: 0; align-items: center; gap: 12px; }
+.edit-pdf-options-hint { min-width: 0; flex: 0 1 auto; }
+.edit-pdf-options .switch { white-space: nowrap; flex-shrink: 0; }
+.edit-pdf-options > .btn { flex-shrink: 0; }
+.edit-pdf-options-hint { font-size: var(--fs-sm); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.edit-pdf-options-file {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 260px;
+  min-width: 32px;
+  flex-shrink: 1;
+  font-size: var(--fs-sm);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.edit-pdf-options-file img {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+/* ── link dialog ── */
+
+.edit-pdf-link-dialog { display: flex; flex-direction: column; gap: 14px; }
+.edit-pdf-fieldset {
+  margin: 0;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+.edit-pdf-fieldset > legend { padding: 0 4px; font-size: var(--fs-sm); font-weight: 700; color: var(--text-muted); }
+.edit-pdf-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; margin-bottom: 10px; }
+.edit-pdf-inline-field { display: flex; align-items: center; gap: 8px; }
+.edit-pdf-inline-field > .field-label { flex-shrink: 0; min-width: 44px; }
+.edit-pdf-radio-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.edit-pdf-radio-row:last-child { margin-bottom: 0; }
+.edit-pdf-indent { display: flex; flex-direction: column; gap: 6px; padding-left: 24px; }
+.edit-pdf-muted { font-size: var(--fs-sm); color: var(--text-muted); }

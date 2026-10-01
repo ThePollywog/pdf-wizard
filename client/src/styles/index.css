@@ -1,0 +1,5 @@
+/* Global stylesheet entry (imported once by main.tsx). */
+@import './tokens.css';
+@import './base.css';
+@import './components.css';
+@import './shell.css';

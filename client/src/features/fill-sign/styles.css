@@ -1,0 +1,412 @@
+/* Fill & Sign: placed items, placement overlay, task panel, options bars and the signature dialog. */
+
+/* ── placed items ─────────────────────────────────────────────────────────── */
+
+.fill-sign-upright {
+  position: absolute;
+  transform-origin: center center;
+  box-sizing: border-box;
+}
+.pdfwizard-page.is-dark .fill-sign-upright { filter: invert(0.92) hue-rotate(180deg); }
+
+.fill-sign-text,
+.fill-sign-text-input {
+  position: absolute;
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  margin: 0;
+  white-space: pre;
+  font-kerning: normal;
+  font-variant-ligatures: none;
+  text-rendering: geometricPrecision;
+}
+.fill-sign-text {
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  overflow: visible;
+}
+.fill-sign-text-input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  caret-color: currentColor;
+  min-width: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.pdfwizard-obj.is-editing[data-kind='fill-text'] .fill-sign-upright {
+  background: rgb(20 115 230 / 0.06);
+}
+
+.fill-sign-mark-svg { display: block; overflow: visible; }
+
+.fill-sign-sig-fill { display: block; width: 100%; height: 100%; }
+.fill-sign-sig-mask {
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+img.fill-sign-sig-img { object-fit: fill; user-select: none; -webkit-user-drag: none; }
+
+/* Items being typed into stay clickable while a fill tool's overlay covers the page. */
+.pdfwizard-objects.is-inert .pdfwizard-obj.is-editing[data-kind='fill-text'],
+.pdfwizard-objects.is-inert .pdfwizard-obj.is-editing[data-kind='fill-text'] * {
+  pointer-events: auto !important;
+}
+
+/* ── placement overlay ────────────────────────────────────────────────────── */
+
+.pdfwizard-tool-overlay[data-tool^='fill-'] { pointer-events: none; }
+.fill-sign-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  touch-action: none;
+}
+.fill-sign-ghost {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.55;
+  white-space: pre;
+}
+.pdfwizard-page.is-dark .fill-sign-ghost { filter: invert(0.92) hue-rotate(180deg); }
+.fill-sign-ghost-sig { opacity: 0.6; }
+.fill-sign-ghost-date { opacity: 0.5; }
+
+.fill-sign-frame {
+  position: absolute;
+  pointer-events: none;
+}
+.fill-sign-handle {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  border-radius: 2px;
+  pointer-events: auto;
+  z-index: 1;
+}
+.fill-sign-handle::before { content: ''; position: absolute; inset: -6px; }
+.fill-sign-handle-nw { left: 0; top: 0; cursor: nwse-resize; }
+.fill-sign-handle-n { left: 50%; top: 0; cursor: ns-resize; }
+.fill-sign-handle-ne { left: 100%; top: 0; cursor: nesw-resize; }
+.fill-sign-handle-e { left: 100%; top: 50%; cursor: ew-resize; }
+.fill-sign-handle-se { left: 100%; top: 100%; cursor: nwse-resize; }
+.fill-sign-handle-s { left: 50%; top: 100%; cursor: ns-resize; }
+.fill-sign-handle-sw { left: 0; top: 100%; cursor: nesw-resize; }
+.fill-sign-handle-w { left: 0; top: 50%; cursor: ew-resize; }
+
+/* ── form field highlight preference ──────────────────────────────────────── */
+
+/* (Form controls in the dark theme: see core/viewer/viewer.css.) */
+
+html.fill-sign-fields-plain .pdfwizard-page .annotationLayer {
+  --annotation-unfocused-field-background: none;
+  --annotation-unfocused-field-filter: none;
+}
+html.fill-sign-fields-plain .pdfwizard-page .annotationLayer :is(input, textarea, select):required { outline: none; }
+
+/* ── task toolbar ─────────────────────────────────────────────────────────── */
+
+/* The symbol chips are icon-only (tooltips name them) and the active chip already names the tool,
+   so the tool's options (date format, signature picker…) stay in view next to nine chips. */
+.tool-options-chips .tool-chip:is(
+    [data-testid='tool-chip-fill-cross'],
+    [data-testid='tool-chip-fill-check'],
+    [data-testid='tool-chip-fill-dot'],
+    [data-testid='tool-chip-fill-line'],
+    [data-testid='tool-chip-fill-circle']
+  ) {
+  padding: 0 8px;
+}
+.tool-options-chips .tool-chip:is(
+    [data-testid='tool-chip-fill-cross'],
+    [data-testid='tool-chip-fill-check'],
+    [data-testid='tool-chip-fill-dot'],
+    [data-testid='tool-chip-fill-line'],
+    [data-testid='tool-chip-fill-circle']
+  )
+  .tool-chip-label {
+  display: none;
+}
+.tool-options-bar[data-tool-id^='fill-'] .tool-options-name { display: none; }
+/* Narrow document area (both side panels open): every Fill & Sign chip becomes icon-only. */
+.tool-options:has(> .tool-options-chips [data-testid='tool-chip-fill-text']) { container-type: inline-size; }
+@container (max-width: 940px) {
+  .tool-options-chips .tool-chip[data-testid^='tool-chip-fill-'] { padding: 0 8px; }
+  .tool-options-chips .tool-chip[data-testid^='tool-chip-fill-'] .tool-chip-label { display: none; }
+}
+/* Narrower still: the tool's options wrap onto a second row (and the chips wrap themselves in a very
+   narrow area) instead of scrolling out of view. */
+.tool-options:has(> .tool-options-chips [data-testid='tool-chip-fill-text']) { flex-wrap: wrap; row-gap: 4px; }
+.tool-options-chips:has([data-testid='tool-chip-fill-text']) { flex: 0 1 auto; flex-wrap: wrap; min-width: 0; row-gap: 4px; }
+@container (max-width: 640px) {
+  .tool-options-chips:has([data-testid='tool-chip-fill-text']) ~ .tool-options-divider { display: none; }
+}
+
+/* ── properties / options bars ────────────────────────────────────────────── */
+
+.fill-sign-bar,
+.fill-sign-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.fill-sign-options { gap: 8px; }
+.fill-sign-options-hint {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fill-sign-swatch { display: inline-flex; align-items: center; flex: none; }
+.fill-sign-options > .select-wrap,
+.fill-sign-options > * { flex: none; }
+/* The hint takes whatever room is left (truncated) and never forces the options onto a second row. */
+.tool-options-bar[data-tool-id^='fill-'] { flex: 1 1 auto; }
+.tool-options-bar > .fill-sign-options { flex: 1 1 auto; }
+.fill-sign-options > .fill-sign-options-hint { flex: 1 1 0; width: 0; min-width: 0; }
+.fill-sign-bar-value {
+  min-width: 34px;
+  height: 28px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.fill-sign-bar-value:hover { background: var(--hover); }
+.fill-sign-bar-value:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fill-sign-opt-sig {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 28px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  cursor: pointer;
+}
+.fill-sign-opt-sig:hover { border-color: var(--border-strong); }
+.fill-sign-opt-sig:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* ── task panel ───────────────────────────────────────────────────────────── */
+
+.fill-sign-panel { display: flex; flex-direction: column; min-height: 0; }
+.fill-sign-section { display: flex; flex-direction: column; gap: 8px; }
+.fill-sign-section .panel-section-title { display: flex; align-items: center; gap: 6px; margin-bottom: 0; }
+.fill-sign-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fill-sign-count { margin: 0; font-size: var(--fs-md); font-weight: 600; color: var(--text); }
+.fill-sign-hint { margin: 0; font-size: var(--fs-sm); line-height: 1.4; color: var(--text-muted); }
+.fill-sign-muted { color: var(--text-muted); font-size: var(--fs-sm); }
+.fill-sign-notice {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 12px 16px 0;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--panel-2);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+.fill-sign-notice svg { flex: none; margin-top: 1px; color: var(--info); }
+
+.fill-sign-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+}
+.fill-sign-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 56px;
+  padding: 6px 4px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-xs);
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+.fill-sign-tool:hover:not(:disabled) { background: var(--hover); border-color: var(--border); }
+.fill-sign-tool:disabled,
+.fill-sign-saved-use:disabled { opacity: 0.45; cursor: default; }
+.fill-sign-tool:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fill-sign-tool.is-active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); }
+
+.fill-sign-sign-group { display: flex; flex-direction: column; gap: 6px; }
+/* Separate the signature and initials lists only once there are saved items to tell apart. */
+.fill-sign-sign-group:has(.fill-sign-saved) + .fill-sign-sign-group,
+.fill-sign-sign-group + .fill-sign-sign-group:has(.fill-sign-saved) { margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border-subtle); }
+.fill-sign-saved { display: flex; align-items: center; gap: 4px; }
+.fill-sign-saved-use {
+  flex: 1;
+  min-width: 0;
+  height: 48px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  cursor: pointer;
+}
+.fill-sign-saved-use:hover:not(:disabled) { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+.fill-sign-saved-use:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fill-sign-saved.is-active .fill-sign-saved-use { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.fill-sign-saved-use .fill-sign-sig-fill { width: 100%; height: 100%; }
+.fill-sign-saved-use img.fill-sign-sig-img { object-fit: contain; }
+.fill-sign-saved-use .fill-sign-sig-mask {
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+.fill-sign-saved-tag { font-size: var(--fs-xs); color: var(--text-subtle); white-space: nowrap; padding: 0 4px; }
+.fill-sign-add-sig,
+.fill-sign-clear { align-self: flex-start; }
+.fill-sign-opt-sig .fill-sign-sig-mask { -webkit-mask-size: contain; mask-size: contain; }
+.fill-sign-opt-sig img.fill-sign-sig-img { object-fit: contain; }
+
+/* ── signature dialog ─────────────────────────────────────────────────────── */
+
+.fill-sign-sig-tabs { margin-bottom: 12px; }
+.fill-sign-sig-body { display: flex; flex-direction: column; gap: 12px; min-height: 304px; } /* tallest tab (Type), so switching tabs does not resize the dialog */
+.fill-sign-sig-type { display: flex; flex-direction: column; gap: 12px; }
+.fill-sign-sig-preview {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  height: 96px;
+  padding: 0 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.fill-sign-sig-preview > span { line-height: 1.1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.fill-sign-sig-baseline {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 16px;
+  border-bottom: 1px solid #c6c6c6;
+  pointer-events: none;
+}
+.fill-sign-sig-styles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+.fill-sign-sig-style {
+  height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fill-sign-sig-style:hover { border-color: var(--border-strong); }
+.fill-sign-sig-style:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fill-sign-sig-style.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+
+.fill-sign-sig-pad-wrap {
+  position: relative;
+  height: 200px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  overflow: hidden;
+}
+.fill-sign-sig-pad {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+  z-index: 1;
+}
+.fill-sign-sig-pad-line {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 44px;
+  border-bottom: 1px solid #c6c6c6;
+  pointer-events: none;
+}
+.fill-sign-sig-pad-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  color: #8a8a8a;
+  font-size: var(--fs-md);
+  pointer-events: none;
+}
+
+.fill-sign-sig-image { display: flex; flex-direction: column; gap: 10px; }
+.fill-sign-sig-image-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 180px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: #fff;
+  background-image:
+    linear-gradient(45deg, #eee 25%, transparent 25%),
+    linear-gradient(-45deg, #eee 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #eee 75%),
+    linear-gradient(-45deg, transparent 75%, #eee 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+.fill-sign-sig-image-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.fill-sign-sig-image-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.fill-sign-error { margin: 0; color: var(--danger); font-size: var(--fs-sm); }
+
+.fill-sign-sig-colors { display: flex; align-items: center; gap: 8px; }
+.fill-sign-ink {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid var(--bg-elevated);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--border-strong);
+  cursor: pointer;
+}
+.fill-sign-ink:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.fill-sign-ink.is-selected { box-shadow: 0 0 0 2px var(--accent); }
+.fill-sign-sig-clear { margin-left: auto; }

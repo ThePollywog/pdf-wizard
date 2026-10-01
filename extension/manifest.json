@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "PDF Wizard CAC Signing",
+  "version": "1.0.0",
+  "description": "Lets the PDF Wizard PDF app sign documents with your CAC (Common Access Card) through the PDF Wizard CAC helper.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArjMqCfuU0arlq6GBrBFVYWLRlunPQ5eA36emr92ZMZ0ZDhfSfC6arwoBq6+lwsANbXk6KFXqL+lEN/MdBQMKkpBPfDAmTIcoed8Jo0l0d6MIK6r3jDUwKS/MI2iJzDWlX7AWeTUNgJ8hYKIa+Oi0IJleOKvrMNoMgGOb6LVaX4vo69HSEl5YJXA50gnIZprlrSwCalCWLQh41ErVDHK++A6cpwGYGSy9ZsIF4xsEtOOJN+wm6Qm3ogftZJ2sEPnapE1/8moSFCBldxeL1LsIjaCVev/ywtXqFZ3JZxq4TNSBdhFsITB8haZBENH1+VLnV36lFL8Z5/pPjJrKYfIr5QIDAQAB",
+  "permissions": [
+    "nativeMessaging",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "48": "icons/48.png",
+    "128": "icons/128.png"
+  },
+  "minimum_chrome_version": "110"
+}
